@@ -2,7 +2,7 @@
 
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { MODEL, triageBatch } from "@/lib/agent";
+import { failedSignal, MODEL, triageBatch } from "@/lib/agent";
 import { expandDateTokens, parseBatch } from "@/lib/batch";
 import { daysBetween, TODAY } from "@/lib/dates";
 import { listOpenOrders, listProducers, listProducts } from "@/lib/store";
@@ -31,8 +31,21 @@ export type InboxState =
 
 const TRIAGE_ORDER: Record<Triage, number> = { ACT_TODAY: 0, MONITOR: 1, NO_CHANGE: 2 };
 
-export async function runTriage(_: InboxState, formData: FormData): Promise<InboxState> {
+const describe = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
+// Server actions return errors as values: a thrown error reaches the browser as the generic
+// Next.js error page in production, with the message stripped.
+export async function runTriage(prev: InboxState, formData: FormData): Promise<InboxState> {
   const text = String(formData.get("batch") ?? "");
+  try {
+    return await triage(text);
+  } catch (e) {
+    console.error("runTriage failed", e);
+    return { status: "error", errors: [`Triage failed before any results came back: ${describe(e)}`], text };
+  }
+}
+
+async function triage(text: string): Promise<InboxState> {
   const [producers, products, orders] = await Promise.all([listProducers(), listProducts(), listOpenOrders()]);
   const { messages, errors } = parseBatch(text, producers);
   if (errors.length) return { status: "error", errors, text };
@@ -43,15 +56,21 @@ export async function runTriage(_: InboxState, formData: FormData): Promise<Inbo
   const orderById = new Map(orders.map((o) => [o.id, o]));
   const now = TODAY;
 
+  // One message that cannot be turned into a result becomes an error row, not a failed request.
   const results: TriageResult[] = signals.map((signal, i) => {
     const message = messages[i];
-    const producer = producerById.get(message.producerId)!;
-    return {
-      message,
-      producerName: producer.name,
-      tier: producer.tier,
-      signal,
-      orders: signal.affectedOrderIds.flatMap((id) => {
+    const producer = producerById.get(message.producerId);
+    const base = { message, producerName: producer?.name ?? message.producerId, tier: producer?.tier ?? ("C" as Tier) };
+    try {
+      return { ...base, signal, orders: affectedOrders(signal) };
+    } catch (e) {
+      console.error(`Could not build the result for ${message.id}`, e);
+      return { ...base, signal: failedSignal(message.id, `could not build the result (${describe(e)})`), orders: [] };
+    }
+  });
+
+  function affectedOrders(signal: Signal): AffectedOrder[] {
+    return signal.affectedOrderIds.flatMap((id) => {
         const o = orderById.get(id);
         if (!o) return [];
         return [
@@ -63,9 +82,8 @@ export async function runTriage(_: InboxState, formData: FormData): Promise<Inbo
             daysToDispatch: daysBetween(now, o.promisedDispatchDate),
           },
         ];
-      }),
-    };
-  });
+    });
+  }
 
   // ACT_TODAY first; within a level, the order closest to its promise first.
   const soonest = (r: TriageResult) => Math.min(Infinity, ...r.orders.map((o) => o.daysToDispatch));
@@ -78,7 +96,12 @@ export async function runTriage(_: InboxState, formData: FormData): Promise<Inbo
   return { status: "done", results, conflicts, model: MODEL, text };
 }
 
-export async function loadEvalBatch(): Promise<string> {
-  const raw = await readFile(path.join(process.cwd(), "eval", "messages.txt"), "utf8");
-  return expandDateTokens(raw);
+export async function loadEvalBatch(): Promise<{ text: string } | { error: string }> {
+  try {
+    const raw = await readFile(path.join(process.cwd(), "eval", "messages.txt"), "utf8");
+    return { text: expandDateTokens(raw) };
+  } catch (e) {
+    console.error("loadEvalBatch failed", e);
+    return { error: `Could not load the eval batch from eval/messages.txt (${describe(e)}). You can still paste messages in.` };
+  }
 }

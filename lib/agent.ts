@@ -66,7 +66,8 @@ const RECORD_SIGNAL: Anthropic.Tool = {
 
 class TriageFailure extends Error {}
 
-function failed(messageId: string, why: string): Signal {
+/** The row returned for a message that could not be triaged: always ACT_TODAY, confidence 0. */
+export function failedSignal(messageId: string, why: string): Signal {
   return {
     messageId,
     affectedOrderIds: [],
@@ -271,7 +272,7 @@ export async function triageBatch(messages: Message[]): Promise<TriageRun> {
   try {
     client = new Anthropic();
   } catch (e) {
-    const signals = messages.map((m) => failed(m.id, `could not create the Anthropic client (${describeError(e)})`));
+    const signals = messages.map((m) => failedSignal(m.id, `could not create the Anthropic client (${describeError(e)})`));
     return { signals, conflicts: [] };
   }
 
@@ -293,7 +294,7 @@ export async function triageBatch(messages: Message[]): Promise<TriageRun> {
       if (!call) throw new TriageFailure("model did not call record_signal");
       return toSignal(message.id, call.input, openOrderIds);
     } catch (e) {
-      return failed(message.id, describeError(e));
+      return failedSignal(message.id, describeError(e));
     }
   }
 

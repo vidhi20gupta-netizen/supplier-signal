@@ -64,10 +64,40 @@ function ResultCard({ r }: { r: TriageResult }) {
   );
 }
 
+// runTriage returns its own errors, but the request itself can still fail (a serverless time limit
+// on a large batch, a dropped connection). Catch that here so it shows in the form, not as the
+// Next.js error page.
+async function runTriageSafely(prev: InboxState, formData: FormData): Promise<InboxState> {
+  try {
+    return await runTriage(prev, formData);
+  } catch {
+    return {
+      status: "error",
+      errors: [
+        "The triage request did not complete. On a large batch this is usually the server time limit. Try again, or run fewer messages at once.",
+      ],
+      text: String(formData.get("batch") ?? ""),
+    };
+  }
+}
+
 export function InboxForm() {
-  const [state, action, pending] = useActionState<InboxState, FormData>(runTriage, { status: "idle" });
+  const [state, action, pending] = useActionState<InboxState, FormData>(runTriageSafely, { status: "idle" });
   const [text, setText] = useState("");
   const [loading, startLoading] = useTransition();
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const loadEval = () =>
+    startLoading(async () => {
+      setLoadError(null);
+      try {
+        const loaded = await loadEvalBatch();
+        if ("error" in loaded) setLoadError(loaded.error);
+        else setText(loaded.text);
+      } catch {
+        setLoadError("Could not reach the server to load the eval batch. Try again.");
+      }
+    });
 
   const results = state.status === "done" ? state.results : [];
   const counts = (t: Triage) => results.filter((r) => r.signal.triage === t).length;
@@ -78,7 +108,10 @@ export function InboxForm() {
         <textarea
           name="batch"
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setText(e.target.value);
+            setLoadError(null);
+          }}
           placeholder={PLACEHOLDER}
           rows={12}
           spellCheck={false}
@@ -91,12 +124,13 @@ export function InboxForm() {
             type="button"
             className="btn"
             disabled={pending || loading}
-            onClick={() => startLoading(async () => setText(await loadEvalBatch()))}
+            onClick={loadEval}
           >
-            Load eval batch (25)
+            {loading ? "Loading…" : "Load eval batch (25)"}
           </button>
           {pending && <span className="muted small">One model call per message. A full batch takes about a minute.</span>}
         </div>
+        {loadError && <p className="form-errors">{loadError}</p>}
         {state.status === "error" && (
           <ul className="form-errors">
             {state.errors.map((e) => <li key={e}>{e}</li>)}
