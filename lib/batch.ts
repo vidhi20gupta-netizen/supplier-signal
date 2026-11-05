@@ -5,18 +5,28 @@
 //
 // The producer may be an id (PR-02) or a name ("Moradabad Brass Collective"); channel and time
 // are optional (defaults WHATSAPP, the current time of day on TODAY). Lines starting with "# " before a header are comments.
-// {{+N}} in a body is replaced with TODAY plus N days ("6 Nov"), so the eval file stays
-// valid on any day.
+// Date tokens in a body are resolved against TODAY, so the eval file stays consistent with the
+// seeded order dates on any day:
+//   {{+N}}          TODAY plus N days as a date, e.g. "6 Nov"
+//   {{weekday-N}}   the weekday name N days before TODAY, e.g. "Saturday" ({{weekday+N}} for after)
 import { addDays, TODAY } from "./dates";
 import type { Channel, Message, Producer } from "./types";
 
 const HEADER = /^---\s*(.+)$/;
 
+function localDate(date: string): Date {
+  const [y, m, d] = date.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
 export function expandDateTokens(text: string, base = TODAY): string {
-  return text.replace(/\{\{\s*\+(\d+)\s*\}\}/g, (_, n: string) => {
-    const [y, m, d] = addDays(base, Number(n)).split("-").map(Number);
-    return new Date(y, m - 1, d).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-  });
+  return text
+    .replace(/\{\{\s*\+(\d+)\s*\}\}/g, (_, n: string) =>
+      localDate(addDays(base, Number(n))).toLocaleDateString("en-GB", { day: "numeric", month: "short" }),
+    )
+    .replace(/\{\{\s*weekday\s*([+-])\s*(\d+)\s*\}\}/g, (_, sign: string, n: string) =>
+      localDate(addDays(base, (sign === "-" ? -1 : 1) * Number(n))).toLocaleDateString("en-GB", { weekday: "long" }),
+    );
 }
 
 function resolveProducer(ref: string, producers: Producer[]): Producer | undefined {

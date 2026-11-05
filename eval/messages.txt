@@ -1,7 +1,9 @@
 # Supplier Signal eval batch: 25 raw producer messages, one per case in the hand-written case list.
 # Each case is re-pointed at the seeded producers and orders (SS-1041 to SS-1060).
 # Header: --- <message id> | <producer id> | <WHATSAPP|SMS> | <HH:MM>
-# {{+N}} becomes today's date plus N days when the file is parsed.
+# Dates are tokens resolved against TODAY when the file is parsed or loaded into /inbox:
+# {{+N}} is TODAY plus N days ("6 Nov"); {{weekday-N}} is the weekday name N days before TODAY.
+# Nothing in this file names a calendar date or weekday directly.
 # These messages are inputs only. Expected labels are not in this file.
 
 # Case 01: clean single-order delay, exact new date (was #412 brass diyas)
@@ -34,7 +36,7 @@ Bhai saab Moradabad market is very bad this week. Copper wire and sheet price ju
 
 # Case 08: raw material shortage naming no order (red clay, quarry strike)
 --- M-08 | PR-05 | SMS | 07:46
-Quarry strike in the district since Saturday. No red clay coming to any potter in Khurja. Whatever is not yet thrown is stopped.
+Quarry strike in the district since {{weekday-3}}. No red clay coming to any potter in Khurja. Whatever is not yet thrown is stopped.
 
 # Case 09: input shortage naming no order (organic indigo across the cooperative)
 --- M-09 | PR-04 | WHATSAPP | 07:52
@@ -78,7 +80,7 @@ While sanding SS-1060 one of the walnut boards split along a natural knot. The o
 
 # Case 19: delay buried after pleasantries (was #460)
 --- M-19 | PR-03 | WHATSAPP | 08:57
-Namaskara! Happy Kannada Rajyotsava to all the team, hope your families are well. My uncle was in hospital last week with his sugar but he is home now and eating properly, thank god. Weather is very strange here, hot in the afternoon and then sudden rain every evening, the whole street floods and the power goes. My son has his college admission this month so lot of running around. Anyway everything is going on. Oh and the SS-1058 bowls will be 4-5 days late.
+Namaskara! Greetings to all the team, hope your families are well. My uncle was in hospital last week with his sugar but he is home now and eating properly, thank god. Weather is very strange here, hot in the afternoon and then sudden rain every evening, the whole street floods and the power goes. My son has his college admission this month so lot of running around. Anyway everything is going on. Oh and the SS-1058 bowls will be 4-5 days late.
 
 # Case 20: cost complaint, ready-for-pickup buried at the end (was #334)
 --- M-20 | PR-02 | WHATSAPP | 09:03
