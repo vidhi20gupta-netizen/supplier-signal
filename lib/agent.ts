@@ -9,7 +9,8 @@ import { listOpenOrders, listProducers, listProducts } from "./store";
 import type { ChangeType, Conflict, Material, Message, Order, OrderFlags, OrderReport, Product, Signal, Triage } from "./types";
 
 export const MODEL = "claude-sonnet-4-5";
-const CONCURRENCY = 5;
+// Calls in flight at once. Kept small to stay clear of API rate limits.
+const CONCURRENCY = 6;
 
 const CHANGE_TYPES: ChangeType[] = ["LATE", "PARTIAL", "CANCELLED", "CAPACITY_CONSTRAINT", "QUALITY", "NONE"];
 const TRIAGES: Triage[] = ["ACT_TODAY", "MONITOR", "NO_CHANGE"];
@@ -298,9 +299,9 @@ export async function triageBatch(messages: Message[]): Promise<TriageRun> {
 
   const results: Signal[] = new Array(messages.length);
   if (messages.length === 0) return { signals: [], conflicts: [] };
-  // Run the first message alone so it writes the prompt cache before the rest read it.
-  results[0] = await triageOne(messages[0]);
-  let next = 1;
+  // No solo warm-up call: the first wave of CONCURRENCY calls each writes the prompt cache, which
+  // costs a little more than one write but saves a whole call's latency on every batch.
+  let next = 0;
   async function worker() {
     while (next < messages.length) {
       const index = next++;
