@@ -5,9 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "eval:run": "tsx --env-file-if-exists=.env.local scripts/run-eval.ts",
+    "eval": "tsx --env-file-if-exists=.env.local eval/run.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.4.0",
     "next": "^15.5.28",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
@@ -16,6 +19,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

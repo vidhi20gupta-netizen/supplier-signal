@@ -1,0 +1,71 @@
+// Parses a pasted batch of producer messages. Format, one block per message:
+//
+//   --- M-01 | PR-02 | WHATSAPP | 07:42
+//   message body, any number of lines
+//
+// The producer may be an id (PR-02) or a name ("Moradabad Brass Collective"); channel and time
+// are optional (defaults WHATSAPP, now). Lines starting with "# " before a header are comments.
+// {{+N}} in a body is replaced with today's date plus N days ("6 Nov"), so the eval file stays
+// valid on any day.
+import { addDays, today } from "./dates";
+import type { Channel, Message, Producer } from "./types";
+
+const HEADER = /^---\s*(.+)$/;
+
+export function expandDateTokens(text: string, base = today()): string {
+  return text.replace(/\{\{\s*\+(\d+)\s*\}\}/g, (_, n: string) => {
+    const [y, m, d] = addDays(base, Number(n)).split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  });
+}
+
+function resolveProducer(ref: string, producers: Producer[]): Producer | undefined {
+  const r = ref.trim().toLowerCase();
+  return producers.find((p) => p.id.toLowerCase() === r) ?? producers.find((p) => p.name.toLowerCase().startsWith(r));
+}
+
+function toTimestamp(time: string | undefined): string {
+  const now = new Date();
+  const m = time?.trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (m) now.setHours(Number(m[1]), Number(m[2]), 0, 0);
+  return now.toISOString();
+}
+
+export type ParseResult = { messages: Message[]; errors: string[] };
+
+export function parseBatch(text: string, producers: Producer[]): ParseResult {
+  const lines = expandDateTokens(text).replace(/\r\n/g, "\n").split("\n");
+  const messages: Message[] = [];
+  const errors: string[] = [];
+  let current: { header: string; body: string[] } | null = null;
+
+  const flush = () => {
+    if (!current) return;
+    // Trailing "# " lines belong to the next message's comment block, not this body.
+    while (current.body.length && /^(# |#$)/.test(current.body[current.body.length - 1].trim())) current.body.pop();
+    const body = current.body.join("\n").trim();
+    const [id, producerRef, channel, time] = current.header.split("|").map((s) => s.trim());
+    const producer = producerRef ? resolveProducer(producerRef, producers) : undefined;
+    const ch = (channel || "WHATSAPP").toUpperCase();
+    if (!id) errors.push(`A header has no message id: "--- ${current.header}"`);
+    else if (!producer) errors.push(`${id}: unknown producer "${producerRef ?? ""}"`);
+    else if (ch !== "WHATSAPP" && ch !== "SMS") errors.push(`${id}: channel must be WHATSAPP or SMS`);
+    else if (!body) errors.push(`${id}: empty message body`);
+    else if (messages.some((m) => m.id === id)) errors.push(`${id}: duplicate message id`);
+    else messages.push({ id, producerId: producer.id, channel: ch as Channel, receivedAt: toTimestamp(time), body });
+    current = null;
+  };
+
+  for (const line of lines) {
+    const header = line.match(HEADER);
+    if (header) {
+      flush();
+      current = { header: header[1], body: [] };
+    } else if (current) {
+      current.body.push(line);
+    }
+  }
+  flush();
+  if (messages.length === 0 && errors.length === 0) errors.push('No messages found. Start each one with a "--- id | producer" line.');
+  return { messages, errors };
+}

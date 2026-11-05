@@ -1,0 +1,202 @@
+[
+  {
+    "id": "M-01",
+    "messageIndex": 0,
+    "expectedChangeType": "TODO",
+    "expectedAffectedOrderIds": "TODO",
+    "expectedTriage": "TODO",
+    "note": "Case 01: clean single-order delay, exact new date (was #412 brass diyas)"
+  },
+  {
+    "id": "M-02",
+    "messageIndex": 1,
+    "expectedChangeType": "TODO",
+    "expectedAffectedOrderIds": "TODO",
+    "expectedTriage": "TODO",
+    "note": "Case 02: clean single-order delay, precise new date, broken tool (was #389 runner, shuttle)"
+  },
+  {
+    "id": "M-03",
+    "messageIndex": 2,
+    "expectedChangeType": "TODO",
+    "expectedAffectedOrderIds": "TODO",
+    "expectedTriage": "TODO",
+    "note": "Case 03: clean single-order delay, finish curing in humidity (was #501 coffee table)"
+  },
+  {
+    "id": "M-04",
+    "messageIndex": 3,
+    "expectedChangeType": "TODO",
+    "expectedAffectedOrderIds": "TODO",
+    "expectedTriage": "TODO",
+    "note": "Case 04: half ready, half a week late on kiln space (was #450 terracotta planters)"
+  },
+  {
+    "id": "M-05",
+    "messageIndex": 4,
+    "expectedChangeType": "TODO",
+    "expectedAffectedOrderIds": "TODO",
+    "expectedTriage": "TODO",
+    "note": "Case 05: 3 of 10 done, rest held on dye mismatch (was #304 cushion covers)"
+  },
+  {
+    "id": "M-06",
+    "messageIndex": 5,
+    "expectedChangeType": "TODO",
+    "expectedAffectedOrderIds": "TODO",
+    "expectedTriage": "TODO",
+    "note": "Case 06: most survived, some cracked and must be remade (was #482 glass tumblers)"
+  },
+  {
+    "id": "M-07",
+    "messageIndex": 6,
+    "expectedChangeType": "TODO",
+    "expectedAffectedOrderIds": "TODO",
+    "expectedTriage": "TODO",
+    "note": "Case 07: raw material shortage naming no order (copper for brass casting)"
+  },
+  {
+    "id": "M-08",
+    "messageIndex": 7,
+    "expectedChangeType": "TODO",
+    "expectedAffectedOrderIds": "TODO",
+    "expectedTriage": "TODO",
+    "note": "Case 08: raw material shortage naming no order (red clay, quarry strike)"
+  },
+  {
+    "id": "M-09",
+    "messageIndex": 8,
+    "expectedChangeType": "TODO",
+    "expectedAffectedOrderIds": "TODO",
+    "expectedTriage": "TODO",
+    "note": "Case 09: input shortage naming no order (organic indigo across the cooperative)"
+  },
+  {
+    "id": "M-10",
+    "messageIndex": 9,
+    "expectedChangeType": "TODO",
+    "expectedAffectedOrderIds": "TODO",
+    "expectedTriage": "TODO",
+    "note": "Case 10: space constraint, kiln full for at least three days"
+  },
+  {
+    "id": "M-11",
+    "messageIndex": 10,
+    "expectedChangeType": "TODO",
+    "expectedAffectedOrderIds": "TODO",
+    "expectedTriage": "TODO",
+    "note": "Case 11: space constraint, workshop floor blocked by an export order"
+  },
+  {
+    "id": "M-12",
+    "messageIndex": 11,
+    "expectedChangeType": "TODO",
+    "expectedAffectedOrderIds": "TODO",
+    "expectedTriage": "TODO",
+    "note": "Case 12: three orders in one text, mixed statuses (was #310, #312, #315)"
+  },
+  {
+    "id": "M-13",
+    "messageIndex": 12,
+    "expectedChangeType": "TODO",
+    "expectedAffectedOrderIds": "TODO",
+    "expectedTriage": "TODO",
+    "note": "Case 13: finished, half done, and a complaint about a closed order (was #204, #205)"
+  },
+  {
+    "id": "M-14",
+    "messageIndex": 13,
+    "expectedChangeType": "TODO",
+    "expectedAffectedOrderIds": "TODO",
+    "expectedTriage": "TODO",
+    "note": "Case 14: one ready for pickup, one still waiting for wheel time (was #441, #445)"
+  },
+  {
+    "id": "M-15",
+    "messageIndex": 14,
+    "expectedChangeType": "TODO",
+    "expectedAffectedOrderIds": "TODO",
+    "expectedTriage": "TODO",
+    "note": "Case 15: vague timeline, no order number (cane order; producer has two open tray orders)"
+  },
+  {
+    "id": "M-16",
+    "messageIndex": 15,
+    "expectedChangeType": "TODO",
+    "expectedAffectedOrderIds": "TODO",
+    "expectedTriage": "TODO",
+    "note": "Case 16: vague \"soon\" in reply to a dispatch reminder (was dhurries)"
+  },
+  {
+    "id": "M-17",
+    "messageIndex": 16,
+    "expectedChangeType": "TODO",
+    "expectedAffectedOrderIds": "TODO",
+    "expectedTriage": "TODO",
+    "note": "Case 17: quality, hairline crack on one piece, ship or remake? (was #390 vase glaze)"
+  },
+  {
+    "id": "M-18",
+    "messageIndex": 17,
+    "expectedChangeType": "TODO",
+    "expectedAffectedOrderIds": "TODO",
+    "expectedTriage": "TODO",
+    "note": "Case 18: quality, knot split during sanding (was #512 salad bowl sets)"
+  },
+  {
+    "id": "M-19",
+    "messageIndex": 18,
+    "expectedChangeType": "TODO",
+    "expectedAffectedOrderIds": "TODO",
+    "expectedTriage": "TODO",
+    "note": "Case 19: delay buried after pleasantries (was #460)"
+  },
+  {
+    "id": "M-20",
+    "messageIndex": 19,
+    "expectedChangeType": "TODO",
+    "expectedAffectedOrderIds": "TODO",
+    "expectedTriage": "TODO",
+    "note": "Case 20: cost complaint, ready-for-pickup buried at the end (was #334)"
+  },
+  {
+    "id": "M-21",
+    "messageIndex": 20,
+    "expectedChangeType": "TODO",
+    "expectedAffectedOrderIds": "TODO",
+    "expectedTriage": "TODO",
+    "note": "Case 21: all-caps panic, production actually unaffected"
+  },
+  {
+    "id": "M-22",
+    "messageIndex": 21,
+    "expectedChangeType": "TODO",
+    "expectedAffectedOrderIds": "TODO",
+    "expectedTriage": "TODO",
+    "note": "Case 22: urgent tone about a power cut, no deadline broken (original: due in 10 days; seed only goes 4 days out)"
+  },
+  {
+    "id": "M-23",
+    "messageIndex": 22,
+    "expectedChangeType": "TODO",
+    "expectedAffectedOrderIds": "TODO",
+    "expectedTriage": "TODO",
+    "note": "Case 23: broken promise date in a calm, routine tone (was #402 due today)"
+  },
+  {
+    "id": "M-24",
+    "messageIndex": 23,
+    "expectedChangeType": "TODO",
+    "expectedAffectedOrderIds": "TODO",
+    "expectedTriage": "TODO",
+    "note": "Case 24: payment question, no fulfilment content"
+  },
+  {
+    "id": "M-25",
+    "messageIndex": 24,
+    "expectedChangeType": "TODO",
+    "expectedAffectedOrderIds": "TODO",
+    "expectedTriage": "TODO",
+    "note": "Case 25: indirect cancellation without the word \"cancel\" (was #478 brass inlay)"
+  }
+]

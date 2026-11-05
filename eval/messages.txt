@@ -1,0 +1,106 @@
+# Supplier Signal eval batch: 25 raw producer messages, one per case in the hand-written case list.
+# Each case is re-pointed at the seeded producers and orders (SS-1041 to SS-1060).
+# Header: --- <message id> | <producer id> | <WHATSAPP|SMS> | <HH:MM>
+# {{+N}} becomes today's date plus N days when the file is parsed.
+# These messages are inputs only. Expected labels are not in this file.
+
+# Case 01: clean single-order delay, exact new date (was #412 brass diyas)
+--- M-01 | PR-02 | WHATSAPP | 06:52
+Namaste ji. Order SS-1042 brass candle holders (20 sets) will go 3 days late, dispatch on {{+3}}. My nephew's wedding is this week and the whole family karigar team is there. Sorry for this, the date is fixed, {{+3}} morning it will be packed.
+
+# Case 02: clean single-order delay, precise new date, broken tool (was #389 runner, shuttle)
+--- M-02 | PR-04 | SMS | 07:05
+SS1043 cushion covers - main teak printing block cracked yesterday afternoon. New block being carved. Dispatch now {{+5}}. Jaipur Hand Block.
+
+# Case 03: clean single-order delay, finish curing in humidity (was #501 coffee table)
+--- M-03 | PR-01 | WHATSAPP | 07:11
+Good morning team. The walnut & brass shelves for SS-1045 need 4 more days than planned. Humidity is very high this week and the PU finish is not curing, if we pack now it will stay tacky and mark in the box. Better to ship late than get returns.
+
+# Case 04: half ready, half a week late on kiln space (was #450 terracotta planters)
+--- M-04 | PR-05 | WHATSAPP | 07:18
+Hello, for SS-1059 table lamps: 5 are packed and ready. Other 5 bases could not go in this firing, kiln had no space. They will be about one week later.
+
+# Case 05: 3 of 10 done, rest held on dye mismatch (was #304 cushion covers)
+--- M-05 | PR-04 | WHATSAPP | 07:24
+Order 1057: 6 of the 18 covers are done and checked. Remaining 12 are held because the new dye batch came out a different shade, it doesn't match the first 6. We have to redo the dye, will tell you the date once we see the new batch.
+
+# Case 06: most survived, some cracked and must be remade (was #482 glass tumblers)
+--- M-06 | PR-03 | SMS | 07:31
+Sir SS-1049 mango bowls - 7 came out fine after lacquer drying. 3 cracked, we will turn new ones in next cycle.
+
+# Case 07: raw material shortage naming no order (copper for brass casting)
+--- M-07 | PR-02 | WHATSAPP | 07:40
+Bhai saab Moradabad market is very bad this week. Copper wire and sheet price jumped like anything and now no stock at all with any dealer here. Without copper we cannot make the brass alloy for casting. Dealers say new lot maybe next week, nobody is sure.
+
+# Case 08: raw material shortage naming no order (red clay, quarry strike)
+--- M-08 | PR-05 | SMS | 07:46
+Quarry strike in the district since Saturday. No red clay coming to any potter in Khurja. Whatever is not yet thrown is stopped.
+
+# Case 09: input shortage naming no order (organic indigo across the cooperative)
+--- M-09 | PR-04 | WHATSAPP | 07:52
+Bad news from the cooperative: organic indigo is finished in the whole district, no weaver or printer has any. Our next batches are indigo prints so they are stuck until fresh stock comes.
+
+# Case 10: space constraint, kiln full for at least three days
+--- M-10 | PR-05 | WHATSAPP | 08:01
+Kiln is completely full with a big plate order for a restaurant in Delhi. Cannot load any marketplace pieces for at least three days.
+
+# Case 11: space constraint, workshop floor blocked by an export order
+--- M-11 | PR-01 | WHATSAPP | 08:06
+Just so you know, workshop floor is fully taken by 40 dining chairs drying for an export order. No space to finish or pack the small decor items, so those dispatches will be held up till the chairs go out.
+
+# Case 12: three orders in one text, mixed statuses (was #310, #312, #315)
+--- M-12 | PR-01 | WHATSAPP | 08:12
+Update: 1041 packed and ready. 1052 will be one week late. 1055 not started yet.
+
+# Case 13: finished, half done, and a complaint about a closed order (was #204, #205)
+--- M-13 | PR-04 | SMS | 08:19
+1050 finished. 1043 only half done. And the SS-0987 order last month, courier broke 2 covers and still nobody told me what happens to my payment for those.
+
+# Case 14: one ready for pickup, one still waiting for wheel time (was #441, #445)
+--- M-14 | PR-05 | WHATSAPP | 08:25
+SS-1047 lamps are glazed and ready, please send pickup. SS-1053 is still in the queue, waiting for wheel time.
+
+# Case 15: vague timeline, no order number (cane order; producer has two open tray orders)
+--- M-15 | PR-03 | WHATSAPP | 08:31
+The cane tray order will be ready sometime next week when the weather clears up, cane needs sun for drying.
+
+# Case 16: vague "soon" in reply to a dispatch reminder (was dhurries)
+--- M-16 | PR-04 | WHATSAPP | 08:38
+Ji got your reminder. 1050 will ship soon, as soon as my daughter helps me pack them up after her exams.
+
+# Case 17: quality, hairline crack on one piece, ship or remake? (was #390 vase glaze)
+--- M-17 | PR-02 | WHATSAPP | 08:44
+One of the candle holder sets for SS-1051 has a very thin hairline crack in the lacquer, saw it just before packing. Should I ship it anyway or make a new one?
+
+# Case 18: quality, knot split during sanding (was #512 salad bowl sets)
+--- M-18 | PR-01 | WHATSAPP | 08:50
+While sanding SS-1060 one of the walnut boards split along a natural knot. The other 7 are fine. How do you want us to proceed?
+
+# Case 19: delay buried after pleasantries (was #460)
+--- M-19 | PR-03 | WHATSAPP | 08:57
+Namaskara! Happy Kannada Rajyotsava to all the team, hope your families are well. My uncle was in hospital last week with his sugar but he is home now and eating properly, thank god. Weather is very strange here, hot in the afternoon and then sudden rain every evening, the whole street floods and the power goes. My son has his college admission this month so lot of running around. Anyway everything is going on. Oh and the SS-1058 bowls will be 4-5 days late.
+
+# Case 20: cost complaint, ready-for-pickup buried at the end (was #334)
+--- M-20 | PR-02 | WHATSAPP | 09:03
+Transport has become impossible. Diesel went up again, the tempo wala is asking double for the run to the courier hub and the toll is also increased. How are small karigars supposed to survive with these costs, marketplace should think about this. Anyway SS-1056 is ready for pickup.
+
+# Case 21: all-caps panic, production actually unaffected
+--- M-21 | PR-03 | WHATSAPP | 09:09
+EVERYTHING IS RUINED!!! HUGE STORM LAST NIGHT, TREE FELL ON THE SHED, DISASTER!!!
+Ok sorry just saw properly. Tree fell on the old shed we use for scrap wood. Workshop and all the trays and bowls are inside the main building, nothing touched, work going on normally today.
+
+# Case 22: urgent tone about a power cut, no deadline broken (original: due in 10 days; seed only goes 4 days out)
+--- M-22 | PR-04 | SMS | 09:14
+TOTAL EMERGENCY workshop is pitch dark, power cut since 5am!! Printing is by hand so we only need light, electricity board says power back by noon. SS-1050 not due till {{+4}} anyway.
+
+# Case 23: broken promise date in a calm, routine tone (was #402 due today)
+--- M-23 | PR-01 | WHATSAPP | 09:20
+Morning! Lovely cool weather today, finally. Kids are off to school, I'm having chai before starting. The mango bowls for 1048 will take another week, we're doing them with the next batch of wood. Have a good day!
+
+# Case 24: payment question, no fulfilment content
+--- M-24 | PR-05 | SMS | 09:24
+Hello, when will the payout for last month's invoice come to my bank account? Not received yet.
+
+# Case 25: indirect cancellation without the word "cancel" (was #478 brass inlay)
+--- M-25 | PR-02 | WHATSAPP | 09:31
+Beta my eyes are getting too weak for this fine brass jali work on the pendant shades. SS-1046 I can't touch this one, better give it to someone else.

@@ -136,3 +136,59 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   main { padding: 16px; }
   .site-header { padding: 12px 16px; }
 }
+
+/* Buttons */
+.btn, .btn-primary {
+  font: inherit;
+  padding: 7px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn:disabled, .btn-primary:disabled { opacity: 0.5; cursor: default; }
+
+/* Inbox */
+.inbox-form { padding: 14px; margin-bottom: 20px; }
+.inbox-form textarea {
+  width: 100%;
+  font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  resize: vertical;
+  background: var(--bg);
+  color: var(--text);
+}
+.inbox-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; }
+.form-errors { color: var(--over); margin: 10px 0 0; padding-left: 18px; }
+
+.summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+.results { display: grid; gap: 12px; }
+.result { padding: 14px 16px; border-left-width: 4px; }
+.result-ACT_TODAY { border-left-color: var(--over); }
+.result-MONITOR { border-left-color: #d79a1e; }
+.result-NO_CHANGE { border-left-color: var(--border); }
+.result-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.result-conf { margin-left: auto; }
+.triage-ACT_TODAY { background: var(--tier-c); color: var(--tier-c-text); }
+.triage-MONITOR { background: var(--tier-b); color: var(--tier-b-text); }
+.triage-NO_CHANGE { background: #ecebe8; color: var(--muted); }
+.badge.change { background: #e8eef9; color: #2b4f8c; }
+.message-body {
+  margin: 10px 0;
+  padding: 8px 12px;
+  background: var(--bg);
+  border-radius: 8px;
+  white-space: pre-wrap;
+  font-size: 13px;
+}
+.affected { margin: 6px 0; }
+.affected td { padding: 4px 10px 4px 0; font-size: 13px; }
+.affected tr + tr td { border-top: none; }
+.facts { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 8px 0 0; font-size: 13px; }
+.facts dt { color: var(--muted); }
+.facts dd { margin: 0 0 0 -12px; font-weight: 600; }
+.reasoning { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
