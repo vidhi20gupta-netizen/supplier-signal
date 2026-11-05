@@ -73,7 +73,10 @@ export type Signal = {
   /** Calendar date, YYYY-MM-DD. */
   blockedUntil: string | null;
   triage: Triage;
+  /** Two plain sentences for the reviewer: the conclusion and the evidence. Rendered in the UI. */
   reasoning: string;
+  /** The model's step-by-step derivation, kept for audit and evals. Never rendered in the UI. */
+  trace: string;
   /** 0–1. */
   confidence: number;
   /** What the message says about each open order it mentions or affects. Feeds reconciliation. */

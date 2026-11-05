@@ -17,15 +17,16 @@ const TRIAGES: Triage[] = ["ACT_TODAY", "MONITOR", "NO_CHANGE"];
 const MATERIALS: Material[] = ["walnut", "mango wood", "brass", "cane", "cotton", "ceramic"];
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-// Mirrors Signal minus messageId, which the code fills in. Reasoning comes first so the model
-// writes it before committing to the decisions.
+// Mirrors Signal minus messageId, which the code fills in. The trace comes first so the model
+// works through the rules before committing to the decisions; the reviewer-facing reasoning comes
+// after them.
 const RECORD_SIGNAL: Anthropic.Tool = {
   name: "record_signal",
   description: "Record the triage decision for the message being triaged. Call exactly once.",
   input_schema: {
     type: "object",
     properties: {
-      reasoning: { type: "string" },
+      trace: { type: "string" },
       affectedOrderIds: { type: "array", items: { type: "string" } },
       changeType: { type: "string", enum: CHANGE_TYPES },
       newDispatchDate: { type: ["string", "null"], description: "YYYY-MM-DD or null" },
@@ -34,6 +35,7 @@ const RECORD_SIGNAL: Anthropic.Tool = {
       blockedUntil: { type: ["string", "null"], description: "YYYY-MM-DD or null" },
       triage: { type: "string", enum: TRIAGES },
       confidence: { type: "number", minimum: 0, maximum: 1 },
+      reasoning: { type: "string" },
       orderReports: {
         type: "array",
         items: {
@@ -49,6 +51,7 @@ const RECORD_SIGNAL: Anthropic.Tool = {
       },
     },
     required: [
+      "trace",
       "reasoning",
       "affectedOrderIds",
       "changeType",
@@ -78,6 +81,7 @@ export function failedSignal(messageId: string, why: string): Signal {
     blockedUntil: null,
     triage: "ACT_TODAY",
     reasoning: `Automatic triage failed: ${why}. A human must read this message.`,
+    trace: "",
     confidence: 0,
     orderReports: [],
   };
@@ -90,6 +94,7 @@ function toSignal(messageId: string, input: unknown, openOrderIds: Set<string>):
   const i = input as Record<string, unknown>;
 
   if (typeof i.reasoning !== "string" || !i.reasoning.trim()) throw bad("reasoning");
+  if (typeof i.trace !== "string") throw bad("trace");
   if (!Array.isArray(i.affectedOrderIds) || !i.affectedOrderIds.every((x) => typeof x === "string")) {
     throw bad("affectedOrderIds");
   }
@@ -134,6 +139,7 @@ function toSignal(messageId: string, input: unknown, openOrderIds: Set<string>):
     blockedUntil: i.blockedUntil as string | null,
     triage: i.triage as Triage,
     reasoning,
+    trace: i.trace,
     confidence: i.confidence,
     orderReports: (i.orderReports as OrderReport[])
       .filter((r) => openOrderIds.has(r.orderId))
