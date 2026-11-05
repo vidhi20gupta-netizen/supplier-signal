@@ -1,11 +1,11 @@
-// Seed data, generated relative to today so promised dates always fall in the next five days.
+// Seed data, generated relative to TODAY so promised dates always fall in the next five days.
 //
 // The story the data is built to tell: Moradabad Brass Collective is about to report a brass
 // shortage. Its own orders are the obvious casualties, but Kaarigar Woodworks (wall shelves) and
 // Khurja Clay House (table lamps) also use brass, and their orders never mention Moradabad.
 // Cane is shared the same way between Moradabad and Channapatna. Channapatna (tier C) is
 // already committed past its declared weekly capacity.
-import { addDays, today } from "./dates";
+import { addDays, TODAY } from "./dates";
 import type { Order, Producer, Product } from "./types";
 
 export const producers: Producer[] = [
@@ -97,10 +97,9 @@ const ORDER_ROWS: [number, string, string, number, number][] = [
 ];
 
 export function seedOrders(): Order[] {
-  const now = today();
   return ORDER_ROWS.map(([num, productId, producerId, quantity, offset]) => {
     const product = products.find((p) => p.id === productId)!;
-    const dispatch = addDays(now, offset);
+    const dispatch = addDays(TODAY, offset);
     return {
       id: `SS-${num}`,
       productId,

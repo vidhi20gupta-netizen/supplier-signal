@@ -4,9 +4,9 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { MODEL, triageBatch } from "@/lib/agent";
 import { expandDateTokens, parseBatch } from "@/lib/batch";
-import { daysBetween, today } from "@/lib/dates";
+import { daysBetween, TODAY } from "@/lib/dates";
 import { listOpenOrders, listProducers, listProducts } from "@/lib/store";
-import type { Message, Signal, Tier, Triage } from "@/lib/types";
+import type { Conflict, Message, Signal, Tier, Triage } from "@/lib/types";
 
 export type AffectedOrder = {
   id: string;
@@ -27,7 +27,7 @@ export type TriageResult = {
 export type InboxState =
   | { status: "idle" }
   | { status: "error"; errors: string[]; text: string }
-  | { status: "done"; results: TriageResult[]; model: string; text: string };
+  | { status: "done"; results: TriageResult[]; conflicts: Conflict[]; model: string; text: string };
 
 const TRIAGE_ORDER: Record<Triage, number> = { ACT_TODAY: 0, MONITOR: 1, NO_CHANGE: 2 };
 
@@ -37,11 +37,11 @@ export async function runTriage(_: InboxState, formData: FormData): Promise<Inbo
   const { messages, errors } = parseBatch(text, producers);
   if (errors.length) return { status: "error", errors, text };
 
-  const signals = await triageBatch(messages);
+  const { signals, conflicts } = await triageBatch(messages);
   const producerById = new Map(producers.map((p) => [p.id, p]));
   const productById = new Map(products.map((p) => [p.id, p]));
   const orderById = new Map(orders.map((o) => [o.id, o]));
-  const now = today();
+  const now = TODAY;
 
   const results: TriageResult[] = signals.map((signal, i) => {
     const message = messages[i];
@@ -75,7 +75,7 @@ export async function runTriage(_: InboxState, formData: FormData): Promise<Inbo
       soonest(a) - soonest(b) ||
       a.message.id.localeCompare(b.message.id),
   );
-  return { status: "done", results, model: MODEL, text };
+  return { status: "done", results, conflicts, model: MODEL, text };
 }
 
 export async function loadEvalBatch(): Promise<string> {

@@ -4,15 +4,15 @@
 //   message body, any number of lines
 //
 // The producer may be an id (PR-02) or a name ("Moradabad Brass Collective"); channel and time
-// are optional (defaults WHATSAPP, now). Lines starting with "# " before a header are comments.
-// {{+N}} in a body is replaced with today's date plus N days ("6 Nov"), so the eval file stays
+// are optional (defaults WHATSAPP, the current time of day on TODAY). Lines starting with "# " before a header are comments.
+// {{+N}} in a body is replaced with TODAY plus N days ("6 Nov"), so the eval file stays
 // valid on any day.
-import { addDays, today } from "./dates";
+import { addDays, TODAY } from "./dates";
 import type { Channel, Message, Producer } from "./types";
 
 const HEADER = /^---\s*(.+)$/;
 
-export function expandDateTokens(text: string, base = today()): string {
+export function expandDateTokens(text: string, base = TODAY): string {
   return text.replace(/\{\{\s*\+(\d+)\s*\}\}/g, (_, n: string) => {
     const [y, m, d] = addDays(base, Number(n)).split("-").map(Number);
     return new Date(y, m - 1, d).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
@@ -25,10 +25,12 @@ function resolveProducer(ref: string, producers: Producer[]): Producer | undefin
 }
 
 function toTimestamp(time: string | undefined): string {
-  const now = new Date();
+  const [y, mo, d] = TODAY.split("-").map(Number);
+  const at = new Date();
+  at.setFullYear(y, mo - 1, d);
   const m = time?.trim().match(/^(\d{1,2}):(\d{2})$/);
-  if (m) now.setHours(Number(m[1]), Number(m[2]), 0, 0);
-  return now.toISOString();
+  if (m) at.setHours(Number(m[1]), Number(m[2]), 0, 0);
+  return at.toISOString();
 }
 
 export type ParseResult = { messages: Message[]; errors: string[] };

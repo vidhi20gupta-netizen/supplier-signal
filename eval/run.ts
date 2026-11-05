@@ -6,7 +6,7 @@ import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { MODEL, triageBatch } from "../lib/agent";
 import { parseBatch } from "../lib/batch";
-import { today } from "../lib/dates";
+import { TODAY } from "../lib/dates";
 import { PROMPT_VERSION } from "../lib/prompt";
 import { listProducers } from "../lib/store";
 import { formatReport, readLabels, score, type RawCase } from "./score";
@@ -50,10 +50,15 @@ async function main() {
   const batch = cases.map((c) => messages[c.messageIndex]);
   console.log(`Running ${MODEL} (prompt ${PROMPT_VERSION}) on ${batch.length} of ${raw.length} cases that have labels…\n`);
   const startedAt = new Date();
-  const signals = await triageBatch(batch);
+  const { signals, conflicts } = await triageBatch(batch);
   const finishedAt = new Date();
   const scores = score(cases, signals, messages);
 
+  if (conflicts.length) {
+    console.log(`CONFLICTS (${conflicts.length}) · ACT_TODAY · conflicting reports in this batch`);
+    for (const c of conflicts) console.log(`  ${c.statement}`);
+    console.log("");
+  }
   console.log(formatReport(scores));
 
   const results = {
@@ -64,10 +69,11 @@ async function main() {
     model: MODEL,
     promptVersion: PROMPT_VERSION,
     // Seed dates are relative to the run date, so the same commit scores against different calendar dates.
-    today: today(),
+    today: TODAY,
     casesTotal: raw.length,
     casesLabelled: cases.length,
     scores,
+    conflicts,
     runs: cases.map((c, i) => ({ case: c, message: batch[i], signal: signals[i] })),
   };
   writeFileSync("eval/results.json", JSON.stringify(results, null, 2) + "\n");

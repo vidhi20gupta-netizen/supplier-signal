@@ -1,11 +1,12 @@
 // Triage agent: one Claude call per message, forced through the record_signal tool so the output
 // is structured. triageBatch never throws for a single message: anything it cannot read comes back
 // as ACT_TODAY, because a message we could not read is a message a human must read.
+// After extraction, a reconciliation pass finds orders the batch contradicts itself about.
 import Anthropic from "@anthropic-ai/sdk";
-import { daysBetween, today } from "./dates";
+import { daysBetween, toDateString, TODAY } from "./dates";
 import { buildSystemPrompt, buildUserPrompt } from "./prompt";
 import { listOpenOrders, listProducers, listProducts } from "./store";
-import type { ChangeType, Material, Message, Signal, Triage } from "./types";
+import type { ChangeType, Conflict, Material, Message, Order, OrderFlags, OrderReport, Product, Signal, Triage } from "./types";
 
 export const MODEL = "claude-sonnet-4-5";
 const CONCURRENCY = 5;
@@ -32,6 +33,19 @@ const RECORD_SIGNAL: Anthropic.Tool = {
       blockedUntil: { type: ["string", "null"], description: "YYYY-MM-DD or null" },
       triage: { type: "string", enum: TRIAGES },
       confidence: { type: "number", minimum: 0, maximum: 1 },
+      orderReports: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            orderId: { type: "string" },
+            state: { type: "string", enum: ["AT_RISK", "READY"] },
+            summary: { type: "string" },
+          },
+          required: ["orderId", "state", "summary"],
+          additionalProperties: false,
+        },
+      },
     },
     required: [
       "reasoning",
@@ -43,6 +57,7 @@ const RECORD_SIGNAL: Anthropic.Tool = {
       "blockedUntil",
       "triage",
       "confidence",
+      "orderReports",
     ],
     additionalProperties: false,
   },
@@ -62,6 +77,7 @@ function failed(messageId: string, why: string): Signal {
     triage: "ACT_TODAY",
     reasoning: `Automatic triage failed: ${why}. A human must read this message.`,
     confidence: 0,
+    orderReports: [],
   };
 }
 
@@ -88,6 +104,14 @@ function toSignal(messageId: string, input: unknown, openOrderIds: Set<string>):
     throw bad("materialsBlocked");
   }
   if (typeof i.confidence !== "number" || i.confidence < 0 || i.confidence > 1) throw bad("confidence");
+  const isReport = (r: unknown): r is OrderReport => {
+    const x = r as Record<string, unknown>;
+    return (
+      typeof x === "object" && x !== null && typeof x.orderId === "string" &&
+      (x.state === "AT_RISK" || x.state === "READY") && typeof x.summary === "string"
+    );
+  };
+  if (!Array.isArray(i.orderReports) || !i.orderReports.every(isReport)) throw bad("orderReports");
 
   // An order id the model made up, or one that is not open, must not reach the review queue
   // looking like a match. Drop it and say so.
@@ -109,7 +133,87 @@ function toSignal(messageId: string, input: unknown, openOrderIds: Set<string>):
     triage: i.triage as Triage,
     reasoning,
     confidence: i.confidence,
+    orderReports: (i.orderReports as OrderReport[])
+      .filter((r) => openOrderIds.has(r.orderId))
+      // Summaries are joined with commas in conflict statements, so a comma inside one reads as a new report.
+      .map((r) => ({ ...r, summary: r.summary.trim().replace(/\.$/, "").replace(/\s*[,;]\s*/g, " and ") })),
   };
+}
+
+const FALLBACK_SUMMARY: Record<ChangeType, string> = {
+  LATE: "a delay",
+  PARTIAL: "a partial shipment",
+  CANCELLED: "it cannot be made",
+  CAPACITY_CONSTRAINT: "a capacity constraint",
+  QUALITY: "a quality problem",
+  NONE: "no change",
+};
+
+/**
+ * Messages are extracted independently, so a batch can contradict itself about an order. An order
+ * is in conflict when one message says it cannot ship (it is in that message's affectedOrderIds)
+ * and another says it is ready (a READY report). No side wins: every such order becomes a Conflict,
+ * and every signal that lists it as affected is raised to ACT_TODAY.
+ */
+export function reconcile(messages: Message[], signals: Signal[]): { signals: Signal[]; conflicts: Conflict[] } {
+  type Side = { messageId: string; summary: string; index: number };
+  const byOrder = new Map<string, { cannotShip: Side[]; ready: Side[] }>();
+  const sides = (orderId: string) => {
+    if (!byOrder.has(orderId)) byOrder.set(orderId, { cannotShip: [], ready: [] });
+    return byOrder.get(orderId)!;
+  };
+
+  signals.forEach((s, index) => {
+    const messageId = messages[index].id;
+    const summaryFor = (orderId: string, state: OrderReport["state"]) =>
+      s.orderReports.find((r) => r.orderId === orderId && r.state === state)?.summary || null;
+    if (s.changeType !== "NONE") {
+      for (const orderId of s.affectedOrderIds) {
+        sides(orderId).cannotShip.push({ messageId, index, summary: summaryFor(orderId, "AT_RISK") ?? FALLBACK_SUMMARY[s.changeType] });
+      }
+    }
+    for (const r of s.orderReports) {
+      // A message that both holds and readies an order (a partial) is not a conflict with itself.
+      if (r.state === "READY" && !s.affectedOrderIds.includes(r.orderId)) {
+        sides(r.orderId).ready.push({ messageId, index, summary: r.summary || "ready" });
+      }
+    }
+  });
+
+  const conflicts: Conflict[] = [...byOrder.entries()]
+    .filter(([, x]) => x.cannotShip.length > 0 && x.ready.length > 0)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([orderId, x]) => {
+      const strip = ({ messageId, summary }: Side) => ({ messageId, summary });
+      const reports = [...x.cannotShip, ...x.ready].map((r) => `${r.messageId} reports ${r.summary}`);
+      return {
+        orderId,
+        cannotShip: x.cannotShip.map(strip),
+        ready: x.ready.map(strip),
+        statement: `${orderId}: ${reports.join(", ")}. Confirm which is current.`,
+        triage: "ACT_TODAY",
+        reason: "conflicting reports in this batch",
+      };
+    });
+
+  const reconciled = signals.map((s, index) => {
+    const messageId = messages[index].id;
+    const notes: string[] = [];
+    let triage = s.triage;
+    for (const c of conflicts) {
+      const others = [...c.cannotShip, ...c.ready].map((r) => r.messageId).filter((id) => id !== messageId);
+      if (s.affectedOrderIds.includes(c.orderId) && c.cannotShip.some((r) => r.messageId === messageId)) {
+        triage = "ACT_TODAY";
+        notes.push(`${c.orderId} is ACT_TODAY: conflicting reports in this batch (also ${others.join(", ")}).`);
+      } else if (c.ready.some((r) => r.messageId === messageId)) {
+        notes.push(`${c.orderId} conflicts with ${others.join(", ")} in this batch.`);
+      }
+    }
+    if (!notes.length) return s;
+    return { ...s, triage, reasoning: `${s.reasoning} [Reconciliation: ${notes.join(" ")}]` };
+  });
+
+  return { signals: reconciled, conflicts };
 }
 
 function describeError(e: unknown): string {
@@ -121,11 +225,35 @@ function describeError(e: unknown): string {
   return String(e);
 }
 
-/** Triage one morning batch. Returns one Signal per message, in the same order. */
-export async function triageBatch(messages: Message[]): Promise<Signal[]> {
+export const ACTION_WINDOW_DAYS = 2;
+
+/**
+ * Urgency is computed here, not by the model. Production is assumed to start on the order date:
+ * orders record no progress, so elapsed production is the time since orderedAt.
+ */
+export function computeOrderFlags(order: Order, product: Product | undefined): OrderFlags {
+  const daysRemaining = daysBetween(TODAY, order.promisedDispatchDate);
+  const elapsed = Math.max(0, daysBetween(toDateString(new Date(order.orderedAt)), TODAY));
+  const remainingMakeTime = Math.max(0, (product?.dispatchDays ?? 0) - elapsed);
+  return {
+    daysRemaining,
+    withinActionWindow: daysRemaining <= ACTION_WINDOW_DAYS,
+    remainingMakeTime,
+    feasible: daysRemaining >= remainingMakeTime,
+  };
+}
+
+export type TriageRun = {
+  /** One per message, in the same order, after reconciliation. */
+  signals: Signal[];
+  conflicts: Conflict[];
+};
+
+/** Triage one morning batch: extract every message, then reconcile across the batch. */
+export async function triageBatch(messages: Message[]): Promise<TriageRun> {
   const [orders, products, producers] = await Promise.all([listOpenOrders(), listProducts(), listProducers()]);
-  const now = today();
-  const openOrders = orders.map((o) => ({ ...o, daysToDispatch: daysBetween(now, o.promisedDispatchDate) }));
+  const productById = new Map(products.map((p) => [p.id, p]));
+  const openOrders = orders.map((o) => ({ ...o, ...computeOrderFlags(o, productById.get(o.productId)) }));
   const openOrderIds = new Set(openOrders.map((o) => o.id));
   const producerById = new Map(producers.map((p) => [p.id, p]));
 
@@ -133,7 +261,7 @@ export async function triageBatch(messages: Message[]): Promise<Signal[]> {
   const system: Anthropic.TextBlockParam[] = [
     {
       type: "text",
-      text: buildSystemPrompt({ today: now, openOrders, products, producers, batch: messages }),
+      text: buildSystemPrompt({ today: TODAY, openOrders, products, producers, batch: messages }),
       cache_control: { type: "ephemeral" },
     },
   ];
@@ -142,7 +270,8 @@ export async function triageBatch(messages: Message[]): Promise<Signal[]> {
   try {
     client = new Anthropic();
   } catch (e) {
-    return messages.map((m) => failed(m.id, `could not create the Anthropic client (${describeError(e)})`));
+    const signals = messages.map((m) => failed(m.id, `could not create the Anthropic client (${describeError(e)})`));
+    return { signals, conflicts: [] };
   }
 
   async function triageOne(message: Message): Promise<Signal> {
@@ -168,7 +297,7 @@ export async function triageBatch(messages: Message[]): Promise<Signal[]> {
   }
 
   const results: Signal[] = new Array(messages.length);
-  if (messages.length === 0) return results;
+  if (messages.length === 0) return { signals: [], conflicts: [] };
   // Run the first message alone so it writes the prompt cache before the rest read it.
   results[0] = await triageOne(messages[0]);
   let next = 1;
@@ -179,5 +308,5 @@ export async function triageBatch(messages: Message[]): Promise<Signal[]> {
     }
   }
   await Promise.all(Array.from({ length: Math.min(CONCURRENCY, messages.length) }, worker));
-  return results;
+  return reconcile(messages, results);
 }

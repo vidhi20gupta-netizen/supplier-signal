@@ -1,5 +1,5 @@
 import { TierBadge, StatusBadge } from "@/components/Badges";
-import { daysBetween, formatDate, today } from "@/lib/dates";
+import { daysBetween, formatDate, TODAY } from "@/lib/dates";
 import { listOpenOrders, listProducers, listProducts } from "@/lib/store";
 
 // The store is mutable and the dates are relative to today, so never prerender this page.
@@ -16,7 +16,7 @@ export default async function OpenOrdersPage() {
   const [orders, products, producers] = await Promise.all([listOpenOrders(), listProducts(), listProducers()]);
   const productById = new Map(products.map((p) => [p.id, p]));
   const producerById = new Map(producers.map((p) => [p.id, p]));
-  const now = today();
+  const now = TODAY;
   const units = orders.reduce((s, o) => s + o.quantity, 0);
 
   return (

@@ -107,11 +107,33 @@ export function InboxForm() {
       {state.status === "done" && (
         <>
           <div className="summary">
+            {state.conflicts.length > 0 && (
+              <span className="badge triage-ACT_TODAY">{state.conflicts.length} conflicts</span>
+            )}
             <span className="badge triage-ACT_TODAY">{counts("ACT_TODAY")} act today</span>
             <span className="badge triage-MONITOR">{counts("MONITOR")} monitor</span>
             <span className="badge triage-NO_CHANGE">{counts("NO_CHANGE")} no change</span>
             <span className="muted small">{state.model}</span>
           </div>
+          {state.conflicts.length > 0 && (
+            <section className="card conflicts" aria-labelledby="conflicts-title">
+              <div className="result-head">
+                <span className="badge triage-ACT_TODAY">Act today</span>
+                <h2 id="conflicts-title">Conflicting reports in this batch</h2>
+              </div>
+              <p className="muted small">
+                These orders are reported as blocked in one message and ready in another. Nothing has been resolved
+                automatically.
+              </p>
+              <ul>
+                {state.conflicts.map((c) => (
+                  <li key={c.orderId}>
+                    <span className="mono">{c.orderId}</span>: {c.statement.slice(c.orderId.length + 2)}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
           <div className="results">
             {results.map((r) => <ResultCard key={r.message.id} r={r} />)}
           </div>
